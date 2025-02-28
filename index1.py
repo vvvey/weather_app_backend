@@ -6,8 +6,7 @@ import math
 import logging
 import os
 
-
-app = Flask(__name__, static_folder='../frontend/build', static_url_path='/')
+app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
 
