@@ -10,13 +10,6 @@ COPY . /server
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+EXPOSE 80
 
-ENV LISTEN_PORT=5000
-# Make port 5000 available to the world outside this container
-EXPOSE 5000
-
-# Define environment variable
-ENV FLASK_ENV production
-
-# Run app.py when the container launches
-CMD ["python", "index1.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "app:app"]
