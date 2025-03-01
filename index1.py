@@ -117,6 +117,9 @@ def predict(data):
 
         new_row = [tmpf, humidity, windspeedknots, windgustknots, tdiff, isday]
         transformed_data.append(new_row)
+
+     # reverse the order (newest last)
+    transformed_data = transformed_data[::-1]
     
     features = ['tmpf', 'rh', 'sknt', 'gust', 'tdiff', 'isday']
     sample = np.array(transformed_data)
