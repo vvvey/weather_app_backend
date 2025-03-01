@@ -76,7 +76,7 @@ def get_weather_records(last_n=10):
         conn = get_db_connection()
         cur = conn.cursor()
         select_query = f"""
-        SELECT tempf, humidity, windspeedmph, windgustmph, winddir, timestamp, (timestamp - LAG(timestamp) OVER (ORDER BY timestamp)) / 60.0 AS tdiff FROM weather_t ORDER BY timestamp DESC LIMIT {3};
+        SELECT tempf, humidity, windspeedmph, windgustmph, winddir, timestamp, (timestamp - LAG(timestamp) OVER (ORDER BY timestamp)) / 60.0 AS tdiff FROM weather_t ORDER BY timestamp DESC LIMIT {last_n};
         """
         cur.execute(select_query)
         data = cur.fetchall()
