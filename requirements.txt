@@ -6,3 +6,8 @@ gunicorn==20.1.0
 ambient_api==1.5.7
 pipenv==2024.4.1
 python-dotenv==1.0.1
+numpy==2.0
+tensorflow==2.18.0
+scikit-learn==1.6.1
+psycopg2==2.9.10
+joblib==1.4.2

@@ -6,6 +6,11 @@ import math
 import logging
 import os
 
+import psycopg2
+from keras.models import load_model
+import joblib
+import numpy as np
+
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 load_dotenv()
@@ -17,7 +22,16 @@ APP_KEY = 'a784dc6788c74457b7d77bbe095f1b9f9488b233772d4d92bab211b9ea3bac85'
 # API_KEY = os.getenv('API_KEY')
 # APP_KEY = os.getenv('APP_KEY')
 
+DB_HOST = "hyperlocal-db.c41iwuymw07w.us-east-1.rds.amazonaws.com" 
+DB_NAME = "weather_db"
+DB_USER = "postgres"
+DB_PASSWORD = "Team1isfire!"  
+DB_PORT = "5432" 
+
 logging.basicConfig(level=logging.DEBUG)
+
+ice_model = load_model('./model_lstm.keras')
+ice_scaler = joblib.load('./scaler_lstm.pkl')
 
 def f_to_c(tempf):
     return (tempf - 32) * (5 / 9)
@@ -34,6 +48,87 @@ def Hossain_2014(H, p, Ce, Te, T, B, BPRT):
             return max(0, R)
     except (ZeroDivisionError, ValueError, TypeError):
         return None
+
+def get_db_connection():
+    """
+    Function to create and return a database connection
+    """
+    try:
+        # Establish the connection
+        conn = psycopg2.connect(
+            host=DB_HOST,
+            database=DB_NAME,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            port=DB_PORT
+        )
+        return conn
+    except psycopg2.Error as e:
+        print(f"Database connection error: {e}")
+        raise
+
+def get_weather_records(last_n=10):
+    """
+    Function to get the last n weather data records from the weather_t table
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        select_query = f"""
+        SELECT tempf, humidity, windspeedmph, windgustmph, winddir, timestamp, (timestamp - LAG(timestamp) OVER (ORDER BY timestamp)) / 60.0 AS tdiff FROM weather_t ORDER BY timestamp DESC LIMIT {3};
+        """
+        cur.execute(select_query)
+        data = cur.fetchall()
+
+        cur.close()
+        return data
+    except Exception as e:
+        print(f"Error retrieving data: {e}")
+    finally:
+        if conn:
+            conn.close()
+            print("Database connection closed.")
+
+def predict(data):
+    """
+    Function to predict if ice will form based on the given weather data
+    Return the probability of ice formation
+    """
+
+    # global ice_model, ice_scaler
+    global ice_model, ice_scaler
+
+    # Some data transformations
+    transformed_data = []
+    for row in data:
+        tmpf = float(row[0])
+        humidity = float(row[1])
+        windspeedmph = float(row[2])
+        windgustmph = float(row[3])
+        winddir = int(row[4])
+        timestamp = int(row[5])
+        tdiff = float(row[6])
+
+
+        isday = 1 if (timestamp % 86400) >= 21600 and (timestamp % 86400) <= 64800 else 0
+        windspeedknots = float(windspeedmph) * 0.868976
+        windgustknots = float(windgustmph) * 0.868976
+
+        new_row = [tmpf, humidity, windspeedknots, windgustknots, tdiff, isday]
+        transformed_data.append(new_row)
+    
+    features = ['tmpf', 'rh', 'sknt', 'gust', 'tdiff', 'isday']
+    sample = np.array(transformed_data)
+    sequence_length = len(transformed_data)
+
+    # Normalize
+    X = ice_scaler.transform(sample)
+
+    # Predict
+    y_pred = ice_model.predict(X.reshape(1, sequence_length, len(features)))
+    return float(y_pred[0][0])
+
 
 @app.route('/')
 def hello_world():
@@ -85,6 +180,27 @@ def get_hossain():
     except requests.exceptions.RequestException as e:
         app.logger.error(f"Error fetching Hossain data: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/weather/ice')
+def get_ice(n=5):
+    try:
+        data = get_weather_records(n) # n - number of records to fetch
+        if not data:
+            return jsonify({'error': 'No data found'}), 404
+        probability = predict(data)
+
+        response = {
+            "probability": probability,
+            "timestamp": data[0][5],
+            "sequence_length": len(data)
+        }
+        return jsonify(response)
+
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error fetching ice data: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run()
