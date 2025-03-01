@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
@@ -136,6 +136,7 @@ def hello_world():
 
 @app.route('/api/weather')
 def get_weather():
+    requests 
     try:
         response = requests.get(f"{ENDPOINT}applicationKey={APP_KEY}&apiKey={API_KEY}")
         response.raise_for_status()
@@ -182,8 +183,10 @@ def get_hossain():
         return jsonify({'error': str(e)}), 500
 
 
+
 @app.route('/api/weather/ice')
-def get_ice(n=5):
+def get_ice(): 
+    n = request.args.get('n', default=10, type=int)
     try:
         data = get_weather_records(n) # n - number of records to fetch
         if not data:
