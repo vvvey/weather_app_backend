@@ -195,7 +195,8 @@ def get_ice():
         if not data:
             return jsonify({'error': 'No data found'}), 404
         probability = predict(data)
-
+        #4 decimal place probability
+        probability = round(probability, 4)
         response = {
             "probability": probability,
             "timestamp": data[0][5],
