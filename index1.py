@@ -156,7 +156,7 @@ def get_weather():
 @app.route('/api/weather/hossain')
 def get_hossain():
     # temp = f_to_c(last_tempf)
-    temp = 21
+    temp = f_to_c(21)
     
     app.logger.info(f"Temperature C: {temp}")
 
