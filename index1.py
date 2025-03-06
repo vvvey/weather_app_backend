@@ -139,13 +139,22 @@ def get_weather():
         response = requests.get(f"{ENDPOINT}applicationKey={APP_KEY}&apiKey={API_KEY}")
         response.raise_for_status()
         data = response.json()
+        # weather_data = [
+        #     {
+        #         "lastData": {
+        #             "tempf": data[0]["lastData"]["tempf"]
+        #         }
+        #     }
+        # ]
+
         weather_data = [
             {
                 "lastData": {
-                    "tempf": data[0]["lastData"]["tempf"]
+                    "tempf": 21.0
                 }
             }
         ]
+
         # Store the temperature data in a global variable
         global last_tempf
         last_tempf = data[0]["lastData"]["tempf"]
