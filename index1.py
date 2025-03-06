@@ -139,22 +139,13 @@ def get_weather():
         response = requests.get(f"{ENDPOINT}applicationKey={APP_KEY}&apiKey={API_KEY}")
         response.raise_for_status()
         data = response.json()
-        # weather_data = [
-        #     {
-        #         "lastData": {
-        #             "tempf": data[0]["lastData"]["tempf"]
-        #         }
-        #     }
-        # ]
-
         weather_data = [
             {
                 "lastData": {
-                    "tempf": 21.0
+                    "tempf": data[0]["lastData"]["tempf"]
                 }
             }
         ]
-
         # Store the temperature data in a global variable
         global last_tempf
         last_tempf = data[0]["lastData"]["tempf"]
@@ -164,8 +155,7 @@ def get_weather():
 
 @app.route('/api/weather/hossain')
 def get_hossain():
-    # temp = f_to_c(last_tempf)
-    temp = f_to_c(21)
+    temp = f_to_c(last_tempf)
     
     app.logger.info(f"Temperature C: {temp}")
 
@@ -232,7 +222,7 @@ def get_ice():
             return jsonify({'error': 'No data found'}), 404
         probability = predict(data)
 
-        probability = round(probability, 4)
+        probability = round(probability*100, 2)
 
         response = {
             "probability": probability,
